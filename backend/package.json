@@ -1,0 +1,28 @@
+{
+  "name": "nexus-backend",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/app/main.js",
+  "scripts": {
+    "dev": "tsc -p tsconfig.json --watch",
+    "build": "tsc -p tsconfig.json && tsc-alias -p tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "start": "electron .",
+    "lint": "echo 'no linter configured yet'"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "nexus-shared": "workspace:*",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.16.0",
+    "@types/ws": "^8.5.12",
+    "electron": "^31.6.0",
+    "tsc-alias": "^1.8.10",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.8"
+  }
+}
