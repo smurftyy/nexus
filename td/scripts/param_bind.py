@@ -41,10 +41,12 @@ def onReceiveText(dat, rowIndex, message, bytes, timeStamp, address, webSocket):
             palm_y = msg.get('palmY', 0.5)
             detected = msg.get('detected', False)
             if detected:
-                if hasattr(comp.par, 'palmX'):
-                    comp.par.palmX.val = palm_x
-                if hasattr(comp.par, 'palmY'):
-                    comp.par.palmY.val = palm_y
+                par_x = getattr(comp.par, 'palmX', None)
+                par_y = getattr(comp.par, 'palmY', None)
+                if par_x is not None:
+                    par_x.val = palm_x
+                if par_y is not None:
+                    par_y.val = palm_y
 
         elif msg_type == 'ping':
             webSocket.sendText(json.dumps({'type': 'pong'}))

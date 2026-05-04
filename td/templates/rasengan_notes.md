@@ -6,7 +6,7 @@
 2. Create a new network or open your existing `.tox`
 3. Add a **WebSocket DAT** at the path `/project1/websocket1`:
    - Mode: **Server**
-   - Network Port: `9980` (must match `TD_WS_PORT` in `.env`)
+   - Network Port: `9980` (must match `wsPort` in `td/config.json` and `TD_WS_PORT` in `.env`)
    - Active: **On**
 4. Add a **DAT Execute** connected to the WebSocket DAT
 5. Paste the contents of `td/scripts/param_bind.py` into the DAT Execute
