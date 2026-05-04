@@ -1,7 +1,7 @@
 import { EventEmitter } from 'events'
 import WebSocket from 'ws'
 import { parseTdInboundMessage } from '@shared/protocol/websocket'
-import type { TdOutboundMessage, TdInboundMessage } from '@shared/protocol/websocket'
+import type { TdOutboundMessage, TdInboundMessage, TdHandTrackingMessage } from '@shared/protocol/websocket'
 import type { ConnectionState, HandTrackingData } from '@shared/types/ipc'
 
 const MAX_RECONNECT_ATTEMPTS = 10
@@ -60,7 +60,7 @@ export class TDEngine extends EventEmitter<TDEngineEvents> {
     const now = Date.now()
     if (now - this.lastHandTrackingTs < HAND_TRACKING_THROTTLE_MS) return
     this.lastHandTrackingTs = now
-    this.ws.send(JSON.stringify({ type: 'hand_tracking', ...data }))
+    this.ws.send(JSON.stringify({ type: 'hand_tracking', ...data } satisfies TdHandTrackingMessage))
   }
 
   private openConnection(): Promise<void> {

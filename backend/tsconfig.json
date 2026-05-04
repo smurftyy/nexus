@@ -1,6 +1,7 @@
 {
   "extends": "../tsconfig.base.json",
   "compilerOptions": {
+    "composite": true,
     "types": ["node"],
     "module": "CommonJS",
     "moduleResolution": "node10",

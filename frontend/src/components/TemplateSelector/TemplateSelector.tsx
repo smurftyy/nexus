@@ -9,6 +9,7 @@ export function TemplateSelector(): React.JSX.Element {
   const [toxPath, setToxPath] = useState('')
   const loadTemplate = useTemplateStore((s) => s.loadTemplate)
   const activeTemplate = useTemplateStore((s) => s.activeTemplate)
+  const loadError = useTemplateStore((s) => s.loadError)
 
   const handleLoad = async () => {
     const trimmed = toxPath.trim()
@@ -16,18 +17,23 @@ export function TemplateSelector(): React.JSX.Element {
   }
 
   return (
-    <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 16 }}>
-      <input
-        type="text"
-        placeholder="Path to .tox file…"
-        value={toxPath}
-        onChange={(e) => setToxPath(e.target.value)}
-        onKeyDown={(e) => { if (e.key === 'Enter') void handleLoad() }}
-        style={{ flex: 1, padding: '4px 8px' }}
-      />
-      <button onClick={() => void handleLoad()}>Load</button>
-      {activeTemplate && (
-        <span style={{ color: '#4caf50', fontSize: 12 }}>✓ {activeTemplate.name}</span>
+    <div style={{ marginBottom: 16 }}>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <input
+          type="text"
+          placeholder="Path to .tox file…"
+          value={toxPath}
+          onChange={(e) => setToxPath(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') void handleLoad() }}
+          style={{ flex: 1, padding: '4px 8px' }}
+        />
+        <button onClick={() => void handleLoad()}>Load</button>
+        {activeTemplate && (
+          <span style={{ color: '#4caf50', fontSize: 12 }}>✓ {activeTemplate.name}</span>
+        )}
+      </div>
+      {loadError && (
+        <p style={{ color: '#f44336', fontSize: 12, margin: '4px 0 0' }}>{loadError}</p>
       )}
     </div>
   )
