@@ -1,8 +1,10 @@
 import { ipcMain } from 'electron'
 import type { BrowserWindow } from 'electron'
+import * as path from 'path'
 import type { TDEngine } from '../core/engine/tdEngine'
 import { CaptureManager } from '../capture/captureManager'
 import { config } from '../core/config/config'
+import type { TdInboundMessage } from '@shared/protocol/websocket'
 import {
   IPC_CHANNELS,
   TdConnectResponseSchema,
@@ -16,6 +18,7 @@ import {
   HandTrackingDataSchema,
 } from '@shared/types/ipc'
 import type { ConnectionState } from '@shared/types/ipc'
+import { MVP_TEMPLATE_PARAMETERS } from '@shared/types/template'
 
 export function registerIpcHandlers(
   tdEngine: TDEngine,
@@ -67,14 +70,56 @@ export function registerIpcHandlers(
 
   ipcMain.handle(IPC_CHANNELS.TD_LOAD_TEMPLATE, async (_event, rawReq: unknown) => {
     const req = TdLoadTemplateRequestSchema.parse(rawReq)
+    const templateId = path.basename(req.toxPath, path.extname(req.toxPath)) || req.toxPath
     try {
-      // Sends load_template to TD. Full implementation must await TdReadyMessage,
-      // parse the returned TemplateMetadata from TD's response, and return it here.
-      // MVP: response is immediate. Renderer polls getStatus for ready state.
       tdEngine.send({ type: 'load_template', toxPath: req.toxPath })
-      return TdLoadTemplateResponseSchema.parse({ success: true })
+
+      await new Promise<void>((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          cleanup()
+          reject(new Error('TD did not confirm template load within 10s'))
+        }, 10_000)
+
+        const onMessage = (msg: TdInboundMessage): void => {
+          if (msg.type === 'ready') {
+            cleanup()
+            resolve()
+            return
+          }
+
+          if (msg.type === 'error') {
+            cleanup()
+            reject(new Error(`[${msg.code}] ${msg.message}`))
+          }
+        }
+
+        const cleanup = () => {
+          clearTimeout(timeout)
+          tdEngine.off('message', onMessage)
+        }
+
+        tdEngine.on('message', onMessage)
+      })
+
+      return TdLoadTemplateResponseSchema.parse({
+        success: true,
+        template: {
+          id: templateId,
+          name: templateId,
+          description: '',
+          toxPath: req.toxPath,
+          parameters: MVP_TEMPLATE_PARAMETERS.map((parameter) => ({
+            ...parameter,
+            range: parameter.range ? { ...parameter.range } : undefined,
+            options: parameter.options?.map((option) => ({ ...option })),
+          })),
+        },
+      })
     } catch (err) {
-      return TdLoadTemplateResponseSchema.parse({ success: false, error: err instanceof Error ? err.message : String(err) })
+      return TdLoadTemplateResponseSchema.parse({
+        success: false,
+        error: err instanceof Error ? err.message : `Failed to load template: ${String(err)}`,
+      })
     }
   })
 
