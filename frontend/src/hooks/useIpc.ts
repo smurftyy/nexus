@@ -20,7 +20,7 @@ export function useIpc(): void {
 
     const unsubError = window.nexusAPI.onError((payload) => {
       setError(`[${payload.code}] ${payload.message}`)
-      console.error(`[IPC Error ${payload.code}]: ${payload.message}`)
+      console.error(`[IPC Error] [${payload.code}] ${payload.message}`)
     })
 
     return () => {
