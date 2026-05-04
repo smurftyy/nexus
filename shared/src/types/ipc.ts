@@ -2,6 +2,9 @@ import { z } from 'zod'
 import { ParameterUpdateSchema } from './control'
 import { TemplateMetadataSchema } from './template'
 
+export { ParameterUpdateSchema }
+export type { ParameterUpdate } from './control'
+
 // All IPC channel names as const — the single source of truth.
 // Adding a new channel here is the mandatory first step before implementing it anywhere.
 export const IPC_CHANNELS = {

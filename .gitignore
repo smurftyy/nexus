@@ -7,6 +7,7 @@ dist/
 *.mov
 *.log
 **/*.tsbuildinfo
+**/package-lock.json
 out/
 coverage/
 .vite/
