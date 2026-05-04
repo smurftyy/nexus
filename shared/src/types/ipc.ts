@@ -76,7 +76,7 @@ export type TdLoadTemplateResponse = z.infer<typeof TdLoadTemplateResponseSchema
 
 export const TdExportRequestSchema = z.object({
   durationSeconds: z.number().positive().finite(),
-  outputDir: z.string().min(1),
+  outputDir: z.string().optional(),
   filename: z.string().min(1),
 })
 export type TdExportRequest = z.infer<typeof TdExportRequestSchema>

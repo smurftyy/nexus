@@ -16,16 +16,24 @@ export const useConnectionStore = create<ConnectionStore>((set) => ({
 
   connect: async () => {
     set({ status: 'connecting', lastError: null })
-    const result = await window.nexusAPI.connect()
-    if (!result.success) {
-      set({ status: 'disconnected', lastError: result.error ?? 'Connection failed' })
+    try {
+      const result = await window.nexusAPI.connect()
+      if (!result.success) {
+        set({ status: 'disconnected', lastError: result.error ?? 'Connection failed' })
+      }
+      // Further status changes arrive via onConnectionChanged push events (wired in useIpc)
+    } catch (err) {
+      set({ status: 'disconnected', lastError: err instanceof Error ? err.message : 'Connection failed' })
     }
-    // Further status changes arrive via onConnectionChanged push events (wired in useIpc)
   },
 
   disconnect: async () => {
-    await window.nexusAPI.disconnect()
-    set({ status: 'disconnected', lastError: null })
+    try {
+      await window.nexusAPI.disconnect()
+      set({ status: 'disconnected', lastError: null })
+    } catch (err) {
+      set({ lastError: err instanceof Error ? err.message : 'Disconnect failed' })
+    }
   },
 
   setStatus: (status) => set({ status }),

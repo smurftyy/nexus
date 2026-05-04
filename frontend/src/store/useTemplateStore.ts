@@ -7,6 +7,7 @@ interface TemplateStore {
   paramValues: Record<string, ControlValue>
   isExporting: boolean
   exportFilePath: string | null
+  loadError: string | null
 
   loadTemplate: (toxPath: string) => Promise<void>
   updateParam: (parameterId: string, value: ControlValue) => void
@@ -19,15 +20,23 @@ export const useTemplateStore = create<TemplateStore>((set, get) => ({
   paramValues: {},
   isExporting: false,
   exportFilePath: null,
+  loadError: null,
 
   loadTemplate: async (toxPath) => {
-    const result = await window.nexusAPI.loadTemplate({ toxPath })
-    if (result.success && result.template) {
-      const initial: Record<string, ControlValue> = {}
-      for (const p of result.template.parameters) {
-        initial[p.id] = p.currentValue
+    set({ loadError: null })
+    try {
+      const result = await window.nexusAPI.loadTemplate({ toxPath })
+      if (result.success && result.template) {
+        const initial: Record<string, ControlValue> = {}
+        for (const p of result.template.parameters) {
+          initial[p.id] = p.currentValue
+        }
+        set({ activeTemplate: result.template, paramValues: initial, exportFilePath: null })
+      } else {
+        set({ loadError: 'Failed to load template' })
       }
-      set({ activeTemplate: result.template, paramValues: initial, exportFilePath: null })
+    } catch (err) {
+      set({ loadError: err instanceof Error ? err.message : 'Failed to load template' })
     }
   },
 
@@ -50,15 +59,18 @@ export const useTemplateStore = create<TemplateStore>((set, get) => ({
 
     set({ isExporting: true, exportFilePath: null })
 
-    const result = await window.nexusAPI.export({
-      durationSeconds,
-      outputDir: '',  // main process resolves outputDir from config
-      filename: `${activeTemplate.id}-${Date.now()}.mp4`,
-    })
-
-    set({ isExporting: false })
-    if (result.success && result.filePath) {
-      set({ exportFilePath: result.filePath })
+    try {
+      const result = await window.nexusAPI.export({
+        durationSeconds,
+        filename: `${activeTemplate.id}-${Date.now()}.mp4`,
+      })
+      if (result.success && result.filePath) {
+        set({ isExporting: false, exportFilePath: result.filePath })
+      } else {
+        set({ isExporting: false })
+      }
+    } catch {
+      set({ isExporting: false })
     }
   },
 
