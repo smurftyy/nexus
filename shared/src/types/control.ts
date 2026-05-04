@@ -4,9 +4,9 @@ export const ControlTypeSchema = z.enum(['slider', 'toggle', 'select'])
 export type ControlType = z.infer<typeof ControlTypeSchema>
 
 export const ControlRangeSchema = z.object({
-  min: z.number(),
-  max: z.number(),
-  step: z.number().positive(),
+  min: z.number().finite(),
+  max: z.number().finite(),
+  step: z.number().positive().finite(),
 })
 export type ControlRange = z.infer<typeof ControlRangeSchema>
 
@@ -24,6 +24,19 @@ export const ControlSchemaDefinition = z.object({
   options: z.array(SelectOptionSchema).optional(),
   defaultValue: z.union([z.number(), z.boolean(), z.string()]),
   internal: z.boolean().optional(),
+}).superRefine((val, ctx) => {
+  if (val.type === 'slider' && val.range === undefined) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'slider controls must have a range', path: ['range'] })
+  }
+  if (val.type === 'select' && (val.options === undefined || val.options.length === 0)) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'select controls must have options', path: ['options'] })
+  }
+  if (val.type === 'toggle' && typeof val.defaultValue !== 'boolean') {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'toggle defaultValue must be boolean', path: ['defaultValue'] })
+  }
+  if (val.type === 'slider' && typeof val.defaultValue !== 'number') {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'slider defaultValue must be number', path: ['defaultValue'] })
+  }
 })
 export type ControlSchema = z.infer<typeof ControlSchemaDefinition>
 

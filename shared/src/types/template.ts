@@ -18,7 +18,7 @@ export type TemplateMetadata = z.infer<typeof TemplateMetadataSchema>
 
 // The 4 user-controlled CHOP parameters for the MVP template.
 // palmX and palmY are system-driven (internal: true) — not shown in UI.
-export const MVP_TEMPLATE_PARAMETERS: TemplateParameter[] = [
+export const MVP_TEMPLATE_PARAMETERS: readonly TemplateParameter[] = Object.freeze([
   {
     id: 'spin',
     label: 'Spin',
@@ -69,4 +69,4 @@ export const MVP_TEMPLATE_PARAMETERS: TemplateParameter[] = [
     currentValue: 0.5,
     internal: true,
   },
-]
+])

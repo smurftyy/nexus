@@ -35,9 +35,9 @@ export type ConnectionState = z.infer<typeof ConnectionStateSchema>
 // ── Hand tracking data (AR webcam mode) ────────────────────────────────────
 
 export const HandTrackingDataSchema = z.object({
-  palmX: z.number().min(0).max(1),
-  palmY: z.number().min(0).max(1),
-  confidence: z.number().min(0).max(1),
+  palmX: z.number().min(0).max(1).finite(),
+  palmY: z.number().min(0).max(1).finite(),
+  confidence: z.number().min(0).max(1).finite(),
   detected: z.boolean(),
 })
 export type HandTrackingData = z.infer<typeof HandTrackingDataSchema>
@@ -49,6 +49,12 @@ export const TdConnectResponseSchema = z.object({
   error: z.string().optional(),
 })
 export type TdConnectResponse = z.infer<typeof TdConnectResponseSchema>
+
+export const TdDisconnectResponseSchema = z.object({
+  success: z.boolean(),
+  error: z.string().optional(),
+})
+export type TdDisconnectResponse = z.infer<typeof TdDisconnectResponseSchema>
 
 export const TdSendParamRequestSchema = ParameterUpdateSchema
 export type TdSendParamRequest = z.infer<typeof TdSendParamRequestSchema>
@@ -69,7 +75,7 @@ export const TdLoadTemplateResponseSchema = z.object({
 export type TdLoadTemplateResponse = z.infer<typeof TdLoadTemplateResponseSchema>
 
 export const TdExportRequestSchema = z.object({
-  durationSeconds: z.number().positive(),
+  durationSeconds: z.number().positive().finite(),
   outputDir: z.string().min(1),
   filename: z.string().min(1),
 })
@@ -92,11 +98,12 @@ export type TdGetStatusResponse = z.infer<typeof TdGetStatusResponseSchema>
 
 export const TdConnectionChangedPayloadSchema = z.object({
   state: ConnectionStateSchema,
+  templateId: z.string().optional(),
 })
 export type TdConnectionChangedPayload = z.infer<typeof TdConnectionChangedPayloadSchema>
 
 export const TdExportCompletePayloadSchema = z.object({
-  filePath: z.string(),
+  filePath: z.string().min(1),
 })
 export type TdExportCompletePayload = z.infer<typeof TdExportCompletePayloadSchema>
 
@@ -112,7 +119,7 @@ export type TdErrorPayload = z.infer<typeof TdErrorPayloadSchema>
 
 export interface NexusAPI {
   connect: () => Promise<TdConnectResponse>
-  disconnect: () => Promise<void>
+  disconnect: () => Promise<TdDisconnectResponse>
   sendParam: (req: TdSendParamRequest) => Promise<TdSendParamResponse>
   loadTemplate: (req: TdLoadTemplateRequest) => Promise<TdLoadTemplateResponse>
   export: (req: TdExportRequest) => Promise<TdExportResponse>
