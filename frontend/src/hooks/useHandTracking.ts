@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type RefObject } from 'react'
 import type { HandTrackingData } from '@shared/types/ipc'
 
 // Landmark indices that define the palm center:
@@ -7,7 +7,7 @@ const PALM_LANDMARKS = [0, 5, 9, 13, 17] as const
 
 interface UseHandTrackingOptions {
   enabled: boolean
-  videoEl: HTMLVideoElement | null
+  videoRef: RefObject<HTMLVideoElement | null>
 }
 
 export interface UseHandTrackingResult {
@@ -17,7 +17,7 @@ export interface UseHandTrackingResult {
 
 export function useHandTracking({
   enabled,
-  videoEl,
+  videoRef,
 }: UseHandTrackingOptions): UseHandTrackingResult {
   const [result, setResult] = useState<UseHandTrackingResult>({ data: null, error: null })
   const handsRef = useRef<import('@mediapipe/hands').Hands | null>(null)
@@ -25,6 +25,7 @@ export function useHandTracking({
   const lastDataRef = useRef<HandTrackingData | null>(null)
 
   useEffect(() => {
+    const videoEl = videoRef.current
     if (!enabled || !videoEl) return
 
     let cancelled = false
@@ -113,7 +114,7 @@ export function useHandTracking({
       handsRef.current = null
       cameraRef.current = null
     }
-  }, [enabled, videoEl])
+  }, [enabled, videoRef])
 
   return result
 }

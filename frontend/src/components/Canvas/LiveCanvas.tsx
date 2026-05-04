@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useCallback } from 'react'
+import React, { useRef, useEffect } from 'react'
 import { useHandTracking } from '../../hooks/useHandTracking'
 
 interface LiveCanvasProps {
@@ -13,20 +13,17 @@ export function LiveCanvas({ enabled, showDebug = false }: LiveCanvasProps): Rea
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
-  const { data, error } = useHandTracking({
-    enabled,
-    videoEl: videoRef.current,
-  })
+  const { data, error } = useHandTracking({ enabled, videoRef })
 
-  const drawDebug = useCallback(() => {
+  useEffect(() => {
     const canvas = canvasRef.current
-    if (!canvas || !data) return
+    if (!canvas) return
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
     ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-    if (!data.detected) return
+    if (!showDebug || !data?.detected) return
 
     const x = data.palmX * canvas.width
     const y = data.palmY * canvas.height
@@ -38,18 +35,7 @@ export function LiveCanvas({ enabled, showDebug = false }: LiveCanvasProps): Rea
     ctx.strokeStyle = 'white'
     ctx.lineWidth = 2
     ctx.stroke()
-  }, [data])
-
-  useEffect(() => {
-    if (showDebug) {
-      drawDebug()
-    } else {
-      const canvas = canvasRef.current
-      if (canvas) {
-        canvas.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height)
-      }
-    }
-  }, [showDebug, drawDebug])
+  }, [showDebug, data])
 
   useEffect(() => {
     if (!data || !enabled) return
