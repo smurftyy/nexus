@@ -33,7 +33,7 @@ export const useTemplateStore = create<TemplateStore>((set, get) => ({
         }
         set({ activeTemplate: result.template, paramValues: initial, exportFilePath: null })
       } else {
-        set({ loadError: 'Failed to load template' })
+        set({ loadError: result.error ?? 'Failed to load template' })
       }
     } catch (err) {
       set({ loadError: err instanceof Error ? err.message : 'Failed to load template' })

@@ -25,7 +25,7 @@ export class CaptureManager {
 
   startExport(req: TdExportRequest): Promise<TdExportResponse> {
     return new Promise((resolve) => {
-      const outputPath = path.join(req.outputDir, req.filename)
+      const outputPath = path.join(req.outputDir ?? this.defaultOutputDir, req.filename)
       const timeoutMs = (req.durationSeconds + 30) * 1000
 
       const timer = setTimeout(() => {
