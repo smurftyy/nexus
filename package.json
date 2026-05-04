@@ -1,0 +1,23 @@
+{
+  "name": "nexus",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@9.0.0",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "scripts": {
+    "dev": "pnpm --filter shared build && concurrently -n frontend,backend -c cyan,magenta \"pnpm --filter frontend dev\" \"pnpm --filter backend dev\"",
+    "build": "pnpm --filter shared build && pnpm --filter backend build && pnpm --filter frontend build",
+    "typecheck": "tsc --build",
+    "test": "pnpm -r test",
+    "lint": "pnpm -r lint",
+    "package": "pnpm build && electron-builder --config electron-builder.yml"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0",
+    "electron-builder": "^25.1.8",
+    "typescript": "^5.6.3"
+  }
+}

@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.env
+.DS_Store
+*.tox
+*.mp4
+*.mov
+*.log
+**/*.tsbuildinfo
+out/
+coverage/
+.vite/
+*.local
