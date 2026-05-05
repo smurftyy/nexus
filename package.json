@@ -2,15 +2,16 @@
   "name": "nexus",
   "version": "0.1.0",
   "private": true,
+  "main": "backend/dist/app/main.js",
   "packageManager": "pnpm@9.0.0",
   "engines": {
     "node": ">=20.0.0",
     "pnpm": ">=9.0.0"
   },
   "scripts": {
-    "dev": "pnpm --filter shared build && concurrently -n frontend,backend -c cyan,magenta \"pnpm --filter frontend dev\" \"pnpm --filter backend dev\"",
+    "dev": "pnpm --filter shared build && pnpm --filter backend build && concurrently -n frontend,backend,electron -c cyan,magenta,yellow \"pnpm --filter frontend dev\" \"pnpm --filter backend dev\" \"pnpm --filter backend start\"",
     "build": "pnpm --filter shared build && pnpm --filter backend build && pnpm --filter frontend build",
-    "typecheck": "tsc --build",
+    "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
     "lint": "pnpm -r lint",
     "package": "pnpm build && electron-builder --config electron-builder.yml"

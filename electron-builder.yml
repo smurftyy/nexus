@@ -1,0 +1,26 @@
+appId: com.nexus.app
+productName: Nexus
+asar: true
+
+directories:
+  output: release
+
+files:
+  - backend/dist/**/*
+  - frontend/dist/**/*
+  - node_modules/**/*
+  - package.json
+
+mac:
+  category: public.app-category.graphics-design
+  target:
+    - target: dmg
+      arch:
+        - x64
+        - arm64
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64

@@ -34,21 +34,11 @@ Open `.env` and fill in each variable:
 
 ## Run in development
 
-Terminal 1 — compile shared and start Vite + tsc watchers:
-
 ```bash
 pnpm dev
 ```
 
-Wait until you see both:
-- `VITE v5.x ready on http://localhost:5173`
-- `tsc --watch` emitting `backend/dist/app/main.js`
-
-Terminal 2 — launch Electron:
-
-```bash
-pnpm --filter backend start
-```
+This builds shared and backend once, then starts three processes in parallel: the Vite dev server, the backend tsc watcher, and Electron. The Electron window appears once the renderer finishes loading. If the window shows `ERR_CONNECTION_REFUSED` briefly, Vite is still starting — wait a few seconds and reload (`Cmd+R` / `Ctrl+R`).
 
 **Expected:** Electron window opens showing the Nexus UI with a Connect button.
 
@@ -109,8 +99,8 @@ pnpm test        # 11/11 tests must pass
 
 ## Common issues
 
-**Blank Electron window / DevTools shows `ERR_CONNECTION_REFUSED` on localhost:5173**
-Electron loaded before Vite finished starting. Kill Electron, wait for the Vite "ready" line in Terminal 1, then re-run `pnpm --filter backend start`.
+**Electron window shows `ERR_CONNECTION_REFUSED` and stays blank**
+Vite hasn't finished starting yet. Wait for the `VITE v5.x ready` line in the terminal output, then reload the window (`Cmd+R` / `Ctrl+R`).
 
 **Hand tracking never activates / no MediaPipe errors shown**
 MediaPipe loads WASM from `cdn.jsdelivr.net` at runtime. On no-internet or corporate proxies this silently fails. Open DevTools → Network, filter by `mediapipe` — you will see failed fetches. Use a hotspot or whitelist the CDN.
