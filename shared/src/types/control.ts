@@ -24,7 +24,10 @@ export const ControlSchemaDefinition = z.object({
   options: z.array(SelectOptionSchema).optional(),
   defaultValue: z.union([z.number(), z.boolean(), z.string()]),
   internal: z.boolean().optional(),
-}).superRefine((val, ctx) => {
+})
+export type ControlSchema = z.infer<typeof ControlSchemaDefinition>
+
+export const ValidatedControlSchema = ControlSchemaDefinition.superRefine((val, ctx) => {
   if (val.type === 'slider' && val.range === undefined) {
     ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'slider controls must have a range', path: ['range'] })
   }
@@ -38,7 +41,6 @@ export const ControlSchemaDefinition = z.object({
     ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'slider defaultValue must be number', path: ['defaultValue'] })
   }
 })
-export type ControlSchema = z.infer<typeof ControlSchemaDefinition>
 
 export const ControlValueSchema = z.union([z.number(), z.boolean(), z.string()])
 export type ControlValue = z.infer<typeof ControlValueSchema>

@@ -1,4 +1,4 @@
-import { ipcMain } from 'electron'
+import { ipcMain, dialog } from 'electron'
 import type { BrowserWindow } from 'electron'
 import * as path from 'path'
 import type { TDEngine } from '../core/engine/tdEngine'
@@ -12,6 +12,7 @@ import {
   TdSendParamResponseSchema,
   TdLoadTemplateResponseSchema,
   TdGetStatusResponseSchema,
+  TdOpenFileDialogResponseSchema,
   ParameterUpdateSchema,
   TdLoadTemplateRequestSchema,
   TdExportRequestSchema,
@@ -50,12 +51,23 @@ export function registerIpcHandlers(
   })
 
   ipcMain.handle(IPC_CHANNELS.TD_DISCONNECT, async () => {
+    let response
+
     try {
       tdEngine.disconnect()
-      return TdDisconnectResponseSchema.parse({ success: true })
+      response = TdDisconnectResponseSchema.parse({ success: true })
     } catch (err) {
-      return TdDisconnectResponseSchema.parse({ success: false, error: err instanceof Error ? err.message : String(err) })
+      response = TdDisconnectResponseSchema.parse({
+        success: false,
+        error: err instanceof Error ? err.message : String(err),
+      })
     }
+
+    if (!response.success && response.error) {
+      console.error('[ipc] TD disconnect failed:', response.error)
+    }
+
+    return response
   })
 
   ipcMain.handle(IPC_CHANNELS.TD_SEND_PARAM, async (_event, rawReq: unknown) => {
@@ -129,7 +141,33 @@ export function registerIpcHandlers(
   })
 
   ipcMain.handle(IPC_CHANNELS.TD_GET_STATUS, async () => {
-    return TdGetStatusResponseSchema.parse({ state: tdEngine.connectionState })
+    const latencyMs = tdEngine.lastLatencyMs
+    return TdGetStatusResponseSchema.parse({
+      connected: tdEngine.connectionState === 'connected',
+      templateId: null,
+      latencyMs,
+      engineState: tdEngine.connectionState,
+    })
+  })
+
+  ipcMain.handle(IPC_CHANNELS.TD_OPEN_FILE_DIALOG, async () => {
+    try {
+      const result = await dialog.showOpenDialog({
+        title: 'Select TouchDesigner Template',
+        filters: [{ name: 'TouchDesigner Component', extensions: ['tox'] }],
+        properties: ['openFile'],
+      })
+      if (result.canceled || result.filePaths.length === 0) {
+        return TdOpenFileDialogResponseSchema.parse({ success: false, filePath: null })
+      }
+      return TdOpenFileDialogResponseSchema.parse({ success: true, filePath: result.filePaths[0] })
+    } catch (err) {
+      return TdOpenFileDialogResponseSchema.parse({
+        success: false,
+        filePath: null,
+        error: err instanceof Error ? err.message : String(err),
+      })
+    }
   })
 
   ipcMain.handle(IPC_CHANNELS.TD_SEND_HAND_TRACKING, async (_event, rawData: unknown) => {

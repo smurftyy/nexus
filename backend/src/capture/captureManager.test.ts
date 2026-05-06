@@ -1,7 +1,18 @@
+import { existsSync } from 'fs'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { EventEmitter } from 'events'
 import type { TdInboundMessage } from '@shared/protocol/websocket'
 import type { ConnectionState } from '@shared/types/ipc'
+
+vi.mock('fs', () => ({
+  existsSync: vi.fn(),
+}))
+
+vi.mock('@shared/types/ipc', () => ({
+  TdExportResponseSchema: {
+    parse: <T>(value: T) => value,
+  },
+}))
 
 function makeMockEngine() {
   const emitter = new EventEmitter() as EventEmitter & {
@@ -18,6 +29,8 @@ import { CaptureManager } from './captureManager'
 describe('CaptureManager', () => {
   beforeEach(() => {
     vi.useFakeTimers()
+    vi.clearAllMocks()
+    vi.mocked(existsSync).mockReturnValue(true)
   })
 
   it('resolves with filePath on recording_complete', async () => {
@@ -54,6 +67,26 @@ describe('CaptureManager', () => {
     const result = await resultPromise
     expect(result.success).toBe(false)
     expect(result.error).toBe('Out of memory')
+  })
+
+  it('resolves with error when TD reports completion but file is missing', async () => {
+    vi.mocked(existsSync).mockReturnValue(false)
+
+    const engine = makeMockEngine()
+    const manager = new CaptureManager('/tmp/exports', engine as never)
+
+    const resultPromise = manager.startExport({
+      durationSeconds: 5,
+      outputDir: '/tmp/exports',
+      filename: 'clip.mp4',
+    })
+
+    const msg: TdInboundMessage = { type: 'recording_complete', filePath: '/tmp/exports/clip.mp4' }
+    engine.emit('message', msg)
+
+    const result = await resultPromise
+    expect(result.success).toBe(false)
+    expect(result.error).toBe('Export reported complete but file not found at: /tmp/exports/clip.mp4')
   })
 
   it('times out if TD never responds', async () => {

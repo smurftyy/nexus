@@ -1,3 +1,4 @@
+import * as fs from 'fs'
 import * as path from 'path'
 import type { TDEngine } from '../core/engine/tdEngine'
 import type { TdInboundMessage } from '@shared/protocol/websocket'
@@ -14,7 +15,6 @@ import type { TdExportRequest, TdExportResponse } from '@shared/types/ipc'
  *   4. A timeout guard resolves with an error if TD never responds.
  *
  * Still needs before shipping:
- *   - Verify the returned filePath exists on disk before resolving success.
  *   - Emit progress events for long exports (future, not MVP).
  */
 export class CaptureManager {
@@ -36,6 +36,14 @@ export class CaptureManager {
       const onMessage = (msg: TdInboundMessage): void => {
         if (msg.type === 'recording_complete') {
           cleanup()
+          if (!fs.existsSync(msg.filePath)) {
+            resolve(TdExportResponseSchema.parse({
+              success: false,
+              error: `Export reported complete but file not found at: ${msg.filePath}`,
+            }))
+            return
+          }
+
           resolve(TdExportResponseSchema.parse({ success: true, filePath: msg.filePath }))
         } else if (msg.type === 'error') {
           cleanup()

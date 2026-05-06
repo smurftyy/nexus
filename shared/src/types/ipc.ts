@@ -16,6 +16,7 @@ export const IPC_CHANNELS = {
   TD_EXPORT: 'td:export',
   TD_GET_STATUS: 'td:get-status',
   TD_SEND_HAND_TRACKING: 'td:send-hand-tracking',
+  TD_OPEN_FILE_DIALOG: 'td:open-file-dialog',
 
   // Main → Renderer (webContents.send / ipcRenderer.on)
   TD_CONNECTION_CHANGED: 'td:connection-changed',
@@ -92,10 +93,22 @@ export const TdExportResponseSchema = z.object({
 export type TdExportResponse = z.infer<typeof TdExportResponseSchema>
 
 export const TdGetStatusResponseSchema = z.object({
-  state: ConnectionStateSchema,
-  templateId: z.string().optional(),
+  connected: z.boolean(),
+  templateId: z.string().nullable(),
+  latencyMs: z.number().nullable(),
+  engineState: z.string(),
 })
 export type TdGetStatusResponse = z.infer<typeof TdGetStatusResponseSchema>
+
+export const TdOpenFileDialogRequestSchema = z.object({})
+export type TdOpenFileDialogRequest = z.infer<typeof TdOpenFileDialogRequestSchema>
+
+export const TdOpenFileDialogResponseSchema = z.object({
+  success: z.boolean(),
+  filePath: z.string().nullable(),
+  error: z.string().optional(),
+})
+export type TdOpenFileDialogResponse = z.infer<typeof TdOpenFileDialogResponseSchema>
 
 // ── Push payload shapes (Main → Renderer) ──────────────────────────────────
 
@@ -128,6 +141,7 @@ export interface NexusAPI {
   export: (req: TdExportRequest) => Promise<TdExportResponse>
   getStatus: () => Promise<TdGetStatusResponse>
   sendHandTracking: (data: HandTrackingData) => Promise<void>
+  openFileDialog: () => Promise<TdOpenFileDialogResponse>
 
   // Push subscriptions — return an unsubscribe function.
   // Callers MUST invoke the returned function on component unmount to avoid leaks.

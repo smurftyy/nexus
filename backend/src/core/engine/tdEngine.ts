@@ -1,13 +1,19 @@
 import { EventEmitter } from 'events'
 import WebSocket from 'ws'
 import { parseTdInboundMessage } from '@shared/protocol/websocket'
-import type { TdOutboundMessage, TdInboundMessage, TdHandTrackingMessage } from '@shared/protocol/websocket'
+import type {
+  TdOutboundMessage,
+  TdInboundMessage,
+  TdHandTrackingMessage,
+  TdPingMessage,
+} from '@shared/protocol/websocket'
 import type { ConnectionState, HandTrackingData } from '@shared/types/ipc'
 
 const MAX_RECONNECT_ATTEMPTS = 10
 const BASE_DELAY_MS = 500
 const MAX_DELAY_MS = 30_000
 const HAND_TRACKING_THROTTLE_MS = 16
+const KEEPALIVE_INTERVAL_MS = 30_000
 
 interface TDEngineEvents {
   connectionChanged: [state: ConnectionState]
@@ -20,8 +26,11 @@ export class TDEngine extends EventEmitter<TDEngineEvents> {
   private state: ConnectionState = 'disconnected'
   private reconnectAttempts = 0
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null
+  private keepaliveTimer: ReturnType<typeof setInterval> | null = null
   private intentionalDisconnect = false
   private lastHandTrackingTs = 0
+  private lastPingSentAtMs: number | null = null
+  private _lastLatencyMs: number | null = null
   private readonly port: number
 
   constructor(port: number) {
@@ -31,6 +40,10 @@ export class TDEngine extends EventEmitter<TDEngineEvents> {
 
   get connectionState(): ConnectionState {
     return this.state
+  }
+
+  get lastLatencyMs(): number | null {
+    return this._lastLatencyMs
   }
 
   connect(): Promise<void> {
@@ -44,8 +57,13 @@ export class TDEngine extends EventEmitter<TDEngineEvents> {
   disconnect(): void {
     this.intentionalDisconnect = true
     this.clearReconnectTimer()
+    this.clearKeepaliveTimer()
     this.ws?.close()
     this.setState('disconnected')
+  }
+
+  destroy(): void {
+    this.disconnect()
   }
 
   send(message: TdOutboundMessage): void {
@@ -73,6 +91,7 @@ export class TDEngine extends EventEmitter<TDEngineEvents> {
         cleanup()
         this.reconnectAttempts = 0
         this.setState('connected')
+        this.startKeepalive()
         resolve()
       }
 
@@ -92,12 +111,19 @@ export class TDEngine extends EventEmitter<TDEngineEvents> {
       ws.on('close', () => this.handleDisconnect())
       ws.on('message', (data: WebSocket.RawData) => {
         const msg = parseTdInboundMessage(data.toString())
-        if (msg) this.emit('message', msg)
+        if (!msg) return
+
+        if (msg.type === 'pong' && this.lastPingSentAtMs !== null) {
+          this._lastLatencyMs = Date.now() - this.lastPingSentAtMs
+        }
+
+        this.emit('message', msg)
       })
     })
   }
 
   private handleDisconnect(): void {
+    this.clearKeepaliveTimer()
     if (this.intentionalDisconnect) return
     this.scheduleReconnect()
   }
@@ -125,6 +151,27 @@ export class TDEngine extends EventEmitter<TDEngineEvents> {
       clearTimeout(this.reconnectTimer)
       this.reconnectTimer = null
     }
+  }
+
+  private startKeepalive(): void {
+    this.clearKeepaliveTimer()
+    this.keepaliveTimer = setInterval(() => {
+      this.lastPingSentAtMs = Date.now()
+      try {
+        this.send({ type: 'ping' } satisfies TdPingMessage)
+      } catch {
+        // connection dropped between tick and close handler — interval will be
+        // cleared by the disconnect path
+      }
+    }, KEEPALIVE_INTERVAL_MS)
+  }
+
+  private clearKeepaliveTimer(): void {
+    if (this.keepaliveTimer !== null) {
+      clearInterval(this.keepaliveTimer)
+      this.keepaliveTimer = null
+    }
+    this.lastPingSentAtMs = null
   }
 
   private setState(next: ConnectionState): void {

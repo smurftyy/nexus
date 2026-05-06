@@ -53,6 +53,31 @@ describe('TDEngine', () => {
     expect(engine.connectionState).toBe('disconnected')
   })
 
+  it('sends keepalive ping after connection establishes', async () => {
+    const engine = new TDEngine(9980)
+    const connectPromise = engine.connect()
+    const wsInstance = (WebSocket as unknown as ReturnType<typeof vi.fn>).mock.instances[0]
+    wsInstance.emit('open')
+    await connectPromise
+
+    vi.advanceTimersByTime(30_000)
+
+    expect(wsInstance.send).toHaveBeenCalledWith(JSON.stringify({ type: 'ping' }))
+  })
+
+  it('clears the keepalive interval on disconnect', async () => {
+    const engine = new TDEngine(9980)
+    const connectPromise = engine.connect()
+    const wsInstance = (WebSocket as unknown as ReturnType<typeof vi.fn>).mock.instances[0]
+    wsInstance.emit('open')
+    await connectPromise
+
+    engine.disconnect()
+    vi.advanceTimersByTime(30_000)
+
+    expect(wsInstance.send).not.toHaveBeenCalled()
+  })
+
   it('schedules reconnect with exponential backoff on unexpected close', async () => {
     const engine = new TDEngine(9980)
     const connectPromise = engine.connect()

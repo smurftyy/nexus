@@ -26,6 +26,7 @@ const api: NexusAPI = {
   export: (req: TdExportRequest) => ipcRenderer.invoke(IPC_CHANNELS.TD_EXPORT, req),
   getStatus: () => ipcRenderer.invoke(IPC_CHANNELS.TD_GET_STATUS),
   sendHandTracking: (data: HandTrackingData) => ipcRenderer.invoke(IPC_CHANNELS.TD_SEND_HAND_TRACKING, data),
+  openFileDialog: () => ipcRenderer.invoke(IPC_CHANNELS.TD_OPEN_FILE_DIALOG),
 
   onConnectionChanged: (cb: (p: TdConnectionChangedPayload) => void) =>
     makePushSubscription(IPC_CHANNELS.TD_CONNECTION_CHANGED, cb),
